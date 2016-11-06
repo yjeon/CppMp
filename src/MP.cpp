@@ -111,7 +111,9 @@ void MotionPlanner::ExtendRandom(void)
     //std::cout << "1"; 
     double sto[2];
     m_simulator->SampleState(sto);
-    int vid = (int)PseudoRandomUniformReal(0,m_vertices.size()-1);
+    //int vid = (int)PseudoRandomUniformReal(0,m_vertices.size()-1);
+    int vid = (int)PseudoRandomUniformReal(0,m_vertices.size());
+    
     if(m_simulator->HasRobotReachedGoal()){
         std::cout << "Goal";
     }
@@ -129,8 +131,25 @@ void MotionPlanner::ExtendRRT(void)
     Clock clk;
     StartTime(&clk);
     //press 2
-    std::cout << "2"; 
-    
+    //std::cout << "2";
+    double sto[2];
+    m_simulator->SampleState(sto); 
+    double min=10000;
+    double min_index;
+    double x;
+    double y;
+    double distance;
+    for(int i = 0; i< m_vertices.size();i++){
+        x = m_vertices[i]->m_state[0];
+        y = m_vertices[i]->m_state[1];
+        distance = sqrt(pow(x - sto[0], 2) + pow(y - sto[1], 2));
+        //distance = sqrt(pow(x - m_simulator->GetGoalCenterX(), 2) + pow(y - m_simulator->GetGoalCenterY(), 2));
+        if(distance<=min){
+            min_index = i;
+            min = distance;
+        }
+    }
+    ExtendTree(min_index, sto);
 //your code
     
     m_totalSolveTime += ElapsedTime(&clk);
