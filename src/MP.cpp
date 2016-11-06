@@ -85,12 +85,20 @@ void MotionPlanner::ExtendTree(const int    vid,
     // If we are not in an obstacle then we have found a valid vertex
     // so add it to our list
     if (!inObstacle) {
-        Vertex *vertex = new Vertex();
+        /*Vertex *vertex = new Vertex();
         vertex->m_state[0] = nextX;
         vertex->m_state[1] = nextY;
         vertex->m_parent = vid;
         AddVertex(vertex);
         m_simulator->SetRobotCenter(nextX, nextY);
+        */
+        Vertex *v = new Vertex();
+        v->m_state[0] = nextX;
+        v->m_state[1] = nextY;
+        v->m_parent = vid;
+        AddVertex(v);
+        m_simulator->SetRobotCenter(nextX,nextY);
+            
     }
     
 }
@@ -104,7 +112,12 @@ void MotionPlanner::ExtendRandom(void)
     double sto[2];
     m_simulator->SampleState(sto);
     int vid = (int)PseudoRandomUniformReal(0,m_vertices.size()-1);
-    ExtendTree(vid,sto);
+    if(m_simulator->HasRobotReachedGoal()){
+        std::cout << "Goal";
+    }
+    else{
+        ExtendTree(vid,sto);
+    }
 //your code
      
 
