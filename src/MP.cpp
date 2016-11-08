@@ -59,6 +59,7 @@ void MotionPlanner::ExtendTree(const int    vid,
     // goal
     double nextX=vertexX;
     double nextY=vertexY;
+    /*
     while (!inObstacle && distance >=stepSize){
         
         //This will first "normalize" the vector and will increase it by a single step
@@ -85,13 +86,53 @@ void MotionPlanner::ExtendTree(const int    vid,
     // If we are not in an obstacle then we have found a valid vertex
     // so add it to our list
     if (!inObstacle) {
-        /*Vertex *vertex = new Vertex();
-        vertex->m_state[0] = nextX;
-        vertex->m_state[1] = nextY;
-        vertex->m_parent = vid;
-        AddVertex(vertex);
+        // Vertex *vertex = new Vertex();
+        // vertex->m_state[0] = nextX;
+        // vertex->m_state[1] = nextY;
+        // vertex->m_parent = vid;
+        // AddVertex(vertex);
+        // m_simulator->SetRobotCenter(nextX, nextY);
+        
+        Vertex *v = new Vertex();
+        v->m_state[0] = nextX;
+        v->m_state[1] = nextY;
+        v->m_parent = vid;
+        AddVertex(v);
+        m_simulator->SetRobotCenter(nextX,nextY);
+            
+    }
+    */
+
+    
+    if(!inObstacle && distance >=stepSize){
+        nextX += (deltaX * stepSize);
+        nextY += (deltaY * stepSize);
+        
+        // Set the robot location so we can determine if this is a valid state
         m_simulator->SetRobotCenter(nextX, nextY);
-        */
+        
+        if (m_simulator->IsValidState()){
+            distance = sqrt(pow(nextX - sto[0], 2) + pow(nextY - sto[1], 2));
+            if (m_simulator->HasRobotReachedGoal()){
+                m_vidAtGoal = vid;
+            }
+        }
+        else {
+            inObstacle = true;
+            // Reset the robot to be at the previous vertex
+            m_simulator->SetRobotCenter(vertexX, vertexY);
+        }
+    }
+
+    if (!inObstacle) {
+        
+        // Vertex *vertex = new Vertex();
+        // vertex->m_state[0] = nextX;
+        // vertex->m_state[1] = nextY;
+        // vertex->m_parent = vid;
+        // AddVertex(vertex);
+        // m_simulator->SetRobotCenter(nextX, nextY);
+        
         Vertex *v = new Vertex();
         v->m_state[0] = nextX;
         v->m_state[1] = nextY;
@@ -161,7 +202,16 @@ void MotionPlanner::ExtendEST(void)
     Clock clk;
     StartTime(&clk);
     //press 3
-    std::cout << "3"; 
+    //std::cout << "3"; 
+    double sto[2];
+    m_simulator->SampleState(sto);
+    
+    //w(q) is a running estimate on importance of selecting q as the tree configuration
+    //from which to add a new tree branch
+    //w(q) = 1/(1+ number of neighbors near q)
+    //w(q) = 1/1+deg(q)
+
+
 //your code    
     m_totalSolveTime += ElapsedTime(&clk);
 }
