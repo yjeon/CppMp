@@ -46,100 +46,52 @@ void MotionPlanner::ExtendTree(const int    vid,
     double dy = (sto[1]-vy)/dis;
     */
     
-    double vertexX = m_vertices[vid]->m_state[0];
-    double vertexY = m_vertices[vid]->m_state[1];   
-    double stepSize = m_simulator->GetDistOneStep();
-    double distance = sqrt(pow(vertexX - sto[0], 2) + pow(vertexY - sto[1], 2));
-    bool inObstacle = false;
+    double vx = m_vertices[vid]->m_state[0];
+    double vy = m_vertices[vid]->m_state[1];   
+    double step = m_simulator->GetDistOneStep();
+    double distance = sqrt(pow(vx - sto[0], 2) + pow(vy - sto[1], 2));
+    bool obstacle = false;
     
-    double deltaX = (sto[0]-vertexX)/distance;
-    double deltaY = (sto[1]-vertexY)/distance;
-    // While we don't hit an obstacle and our distance is greater than 0
-    // walk down this vertex path to see if there are any obstacles or the 
-    // goal
-    double nextX=vertexX;
-    double nextY=vertexY;
-    /*
-    while (!inObstacle && distance >=stepSize){
+    double dx = (sto[0]-vx)/distance;
+    double dy = (sto[1]-vy)/distance;
+    
+
+    double nx = vx;
+    double ny = vy;
+    
+    
+    while(!obstacle){
+        nx += dx*step;
+        ny += dy*step;
         
-        //This will first "normalize" the vector and will increase it by a single step
-        nextX += (deltaX * stepSize);
-        nextY += (deltaY * stepSize);
-        
-        // Set the robot location so we can determine if this is a valid state
-        m_simulator->SetRobotCenter(nextX, nextY);
-        
+        m_simulator->SetRobotCenter(nx, ny);
+
         if (m_simulator->IsValidState()){
-            distance = sqrt(pow(nextX - sto[0], 2) + pow(nextY - sto[1], 2));
-            if (m_simulator->HasRobotReachedGoal()){
-                m_vidAtGoal = vid;
-                break;
+            distance = sqrt(pow(nx - sto[0], 2) + pow(ny - sto[1], 2));
+            
+            if(distance <= step){
+                
+                if (m_simulator->HasRobotReachedGoal()){
+                    m_vidAtGoal = vid;
+
+                }
+
+                Vertex *v = new Vertex();
+                v->m_state[0] = nx;
+                v->m_state[1] = ny;
+                v->m_parent = vid;
+                AddVertex(v);
+                    
+            }
+            else{
+                m_simulator->SetRobotCenter(vx, vy);
+                //break;
             }
         }
         else {
-            inObstacle = true;
-            // Reset the robot to be at the previous vertex
-            m_simulator->SetRobotCenter(vertexX, vertexY);
+            m_simulator->SetRobotCenter(vx, vy);
+            obstacle = true;
         }
-    }
-
-    // If we are not in an obstacle then we have found a valid vertex
-    // so add it to our list
-    if (!inObstacle) {
-        // Vertex *vertex = new Vertex();
-        // vertex->m_state[0] = nextX;
-        // vertex->m_state[1] = nextY;
-        // vertex->m_parent = vid;
-        // AddVertex(vertex);
-        // m_simulator->SetRobotCenter(nextX, nextY);
-        
-        Vertex *v = new Vertex();
-        v->m_state[0] = nextX;
-        v->m_state[1] = nextY;
-        v->m_parent = vid;
-        AddVertex(v);
-        m_simulator->SetRobotCenter(nextX,nextY);
-            
-    }
-    */
-
-    
-    if(!inObstacle && distance >=stepSize){
-        nextX += (deltaX * stepSize);
-        nextY += (deltaY * stepSize);
-        
-        // Set the robot location so we can determine if this is a valid state
-        m_simulator->SetRobotCenter(nextX, nextY);
-        
-        if (m_simulator->IsValidState()){
-            distance = sqrt(pow(nextX - sto[0], 2) + pow(nextY - sto[1], 2));
-            if (m_simulator->HasRobotReachedGoal()){
-                m_vidAtGoal = vid;
-            }
-        }
-        else {
-            inObstacle = true;
-            // Reset the robot to be at the previous vertex
-            m_simulator->SetRobotCenter(vertexX, vertexY);
-        }
-    }
-
-    if (!inObstacle) {
-        
-        // Vertex *vertex = new Vertex();
-        // vertex->m_state[0] = nextX;
-        // vertex->m_state[1] = nextY;
-        // vertex->m_parent = vid;
-        // AddVertex(vertex);
-        // m_simulator->SetRobotCenter(nextX, nextY);
-        
-        Vertex *v = new Vertex();
-        v->m_state[0] = nextX;
-        v->m_state[1] = nextY;
-        v->m_parent = vid;
-        AddVertex(v);
-        m_simulator->SetRobotCenter(nextX,nextY);
-            
     }
     
 }
@@ -148,20 +100,15 @@ void MotionPlanner::ExtendRandom(void)
 {
     Clock clk;
     StartTime(&clk);
+    //your code
     //press 1
     //std::cout << "1"; 
     double sto[2];
     m_simulator->SampleState(sto);
     //int vid = (int)PseudoRandomUniformReal(0,m_vertices.size()-1);
-    int vid = (int)PseudoRandomUniformReal(0,m_vertices.size());
+    int vid = (int)PseudoRandomUniformReal(0, m_vertices.size()-1);
     
-    if(m_simulator->HasRobotReachedGoal()){
-        std::cout << "Goal";
-    }
-    else{
-        ExtendTree(vid,sto);
-    }
-//your code
+    ExtendTree(vid,sto);
      
 
     m_totalSolveTime += ElapsedTime(&clk);
@@ -171,6 +118,7 @@ void MotionPlanner::ExtendRRT(void)
 {
     Clock clk;
     StartTime(&clk);
+    //your code
     //press 2
     //std::cout << "2";
     double sto[2];
@@ -191,7 +139,7 @@ void MotionPlanner::ExtendRRT(void)
         }
     }
     ExtendTree(min_index, sto);
-//your code
+
     
     m_totalSolveTime += ElapsedTime(&clk);
 }
@@ -201,6 +149,7 @@ void MotionPlanner::ExtendEST(void)
 {
     Clock clk;
     StartTime(&clk);
+    //your code 
     //press 3
     //std::cout << "3"; 
     double sto[2];
@@ -212,7 +161,7 @@ void MotionPlanner::ExtendEST(void)
     //w(q) = 1/1+deg(q)
 
 
-//your code    
+   
     m_totalSolveTime += ElapsedTime(&clk);
 }
 
@@ -221,10 +170,11 @@ void MotionPlanner::ExtendMyApproach(void)
 {
     Clock clk;
     StartTime(&clk);
+    //your code
     //press 4
     std::cout << "4"; 
     
-//your code
+
     
     m_totalSolveTime += ElapsedTime(&clk);
 }
