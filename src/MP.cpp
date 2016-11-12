@@ -68,24 +68,28 @@ void MotionPlanner::ExtendTree(const int    vid,
 
         if (m_simulator->IsValidState()){
             distance = sqrt(pow(nx - sto[0], 2) + pow(ny - sto[1], 2));
+            std::cout << distance;
+            std::cout << "\n";
             
             if(distance <= step){
-                
-                if (m_simulator->HasRobotReachedGoal()){
-                    m_vidAtGoal = vid;
-
-                }
+                std::cout << "step is :";
+                std::cout << step;
+                std::cout << "\n";
 
                 Vertex *v = new Vertex();
                 v->m_state[0] = nx;
                 v->m_state[1] = ny;
                 v->m_parent = vid;
                 AddVertex(v);
+                if (m_simulator->HasRobotReachedGoal()){
+                    m_vidAtGoal = vid;
+                    break;
+                }
                     
             }
             else{
                 m_simulator->SetRobotCenter(vx, vy);
-                //break;
+                break;
             }
         }
         else {
