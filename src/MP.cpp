@@ -35,16 +35,6 @@ void MotionPlanner::ExtendTree(const int    vid,
 			       const double sto[])
 {
 //your code
-    //std::cout << "Hello"; 
-    /*
-    double vx = m_vertices[vid]->m_state[0];
-    double vy = m_vertices[vid]->m_state[1];
-    double step = m_simulator->GetDistOneStep();
-    double dis = sqrt(pow(vx-sto[0],2)+pow(vy-sto[1],2));
-
-    double dx = (sto[0]-vx)/dis;
-    double dy = (sto[1]-vy)/dis;
-    */
     
     double vx = m_vertices[vid]->m_state[0];
     double vy = m_vertices[vid]->m_state[1];   
@@ -55,41 +45,23 @@ void MotionPlanner::ExtendTree(const int    vid,
     double dx = (sto[0]-vx)/distance;
     double dy = (sto[1]-vy)/distance;
     
-
+    distance = sqrt(pow(dx,2)+pow(dy,2));
     double nx = vx;
     double ny = vy;
     
-    
-    while(!obstacle){
+    if(distance>=step && !obstacle){
         nx += dx*step;
         ny += dy*step;
-        
-        m_simulator->SetRobotCenter(nx, ny);
-
-        if (m_simulator->IsValidState()){
-            distance = sqrt(pow(nx - sto[0], 2) + pow(ny - sto[1], 2));
-            std::cout << distance;
-            std::cout << "\n";
+        m_simulator->SetRobotCenter(nx,ny);
+        if(m_simulator->IsValidState()){
+            Vertex *v = new Vertex();
+            v->m_state[0] = nx;
+            v->m_state[1] = ny;
+            v->m_parent = vid;
+            AddVertex(v);
             
-            if(distance <= step){
-                std::cout << "step is :";
-                std::cout << step;
-                std::cout << "\n";
-
-                Vertex *v = new Vertex();
-                v->m_state[0] = nx;
-                v->m_state[1] = ny;
-                v->m_parent = vid;
-                AddVertex(v);
-                if (m_simulator->HasRobotReachedGoal()){
-                    m_vidAtGoal = vid;
-                    break;
-                }
-                    
-            }
-            else{
-                m_simulator->SetRobotCenter(vx, vy);
-                break;
+            if (m_simulator->HasRobotReachedGoal()){
+                m_vidAtGoal = vid;
             }
         }
         else {
@@ -97,6 +69,15 @@ void MotionPlanner::ExtendTree(const int    vid,
             obstacle = true;
         }
     }
+    /*
+    if(!obstacle){
+        Vertex *v = new Vertex();
+        v->m_state[0] = nx;
+        v->m_state[1] = ny;
+        v->m_parent = vid;
+        AddVertex(v);
+    }
+    */
     
 }
 
@@ -137,11 +118,12 @@ void MotionPlanner::ExtendRRT(void)
         y = m_vertices[i]->m_state[1];
         distance = sqrt(pow(x - sto[0], 2) + pow(y - sto[1], 2));
         //distance = sqrt(pow(x - m_simulator->GetGoalCenterX(), 2) + pow(y - m_simulator->GetGoalCenterY(), 2));
-        if(distance<=min){
+        if(distance<min){
             min_index = i;
             min = distance;
         }
     }
+
     ExtendTree(min_index, sto);
 
     
