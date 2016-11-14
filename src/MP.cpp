@@ -49,7 +49,7 @@ void MotionPlanner::ExtendTree(const int    vid,
     double nx = vx;
     double ny = vy;
     
-    if(distance>=step && !obstacle){
+    if(distance<=step && !obstacle){
         nx += dx*step;
         ny += dy*step;
         m_simulator->SetRobotCenter(nx,ny);
@@ -59,7 +59,7 @@ void MotionPlanner::ExtendTree(const int    vid,
             v->m_state[1] = ny;
             v->m_parent = vid;
             AddVertex(v);
-            
+
             if (m_simulator->HasRobotReachedGoal()){
                 m_vidAtGoal = vid;
             }
