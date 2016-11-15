@@ -40,7 +40,7 @@ void MotionPlanner::ExtendTree(const int    vid,
     double vy = m_vertices[vid]->m_state[1];   
     double step = m_simulator->GetDistOneStep();
     double distance = sqrt(pow(vx - sto[0], 2) + pow(vy - sto[1], 2));
-    bool obstacle = false;
+    bool obs = false;
     
     double dx = (sto[0]-vx)/distance;
     double dy = (sto[1]-vy)/distance;
@@ -49,10 +49,11 @@ void MotionPlanner::ExtendTree(const int    vid,
     double nx = vx;
     double ny = vy;
     
-    if(distance<=step && !obstacle){
+    if(distance<=step && !obs){
         nx += dx*step;
         ny += dy*step;
         m_simulator->SetRobotCenter(nx,ny);
+
         if(m_simulator->IsValidState()){
             Vertex *v = new Vertex();
             v->m_state[0] = nx;
@@ -62,37 +63,33 @@ void MotionPlanner::ExtendTree(const int    vid,
 
             if (m_simulator->HasRobotReachedGoal()){
                 m_vidAtGoal = vid;
+
             }
         }
         else {
             m_simulator->SetRobotCenter(vx, vy);
-            obstacle = true;
+            obs = true;
         }
     }
-    /*
-    if(!obstacle){
-        Vertex *v = new Vertex();
-        v->m_state[0] = nx;
-        v->m_state[1] = ny;
-        v->m_parent = vid;
-        AddVertex(v);
-    }
-    */
     
 }
+
 
 void MotionPlanner::ExtendRandom(void)
 {
     Clock clk;
     StartTime(&clk);
     //your code
-    //press 1
-    //std::cout << "1"; 
-    double sto[2];
-    m_simulator->SampleState(sto);
-    //int vid = (int)PseudoRandomUniformReal(0,m_vertices.size()-1);
-    int vid = (int)PseudoRandomUniformReal(0, m_vertices.size()-1);
     
+    double sto[2];
+    if (PseudoRandomUniformReal(0,1) <= 0.1) {
+        sto[0] = m_simulator->GetGoalCenterX();
+        sto[1] = m_simulator->GetGoalCenterY();
+    } 
+    else{
+        m_simulator->SampleState(sto);
+    }
+    int vid = (int)PseudoRandomUniformReal(0, m_vertices.size()-1);
     ExtendTree(vid,sto);
      
 
@@ -103,11 +100,17 @@ void MotionPlanner::ExtendRRT(void)
 {
     Clock clk;
     StartTime(&clk);
-    //your code
-    //press 2
-    //std::cout << "2";
+    
     double sto[2];
-    m_simulator->SampleState(sto); 
+    if (PseudoRandomUniformReal(0,1) <= 0.1) {
+
+        sto[0] = m_simulator->GetGoalCenterX();
+        sto[1] = m_simulator->GetGoalCenterY();
+    } 
+    else{
+        m_simulator->SampleState(sto);
+    }
+
     double min=10000;
     double min_index;
     double x;
@@ -126,13 +129,13 @@ void MotionPlanner::ExtendRRT(void)
 
     ExtendTree(min_index, sto);
 
-    
     m_totalSolveTime += ElapsedTime(&clk);
 }
 
 
 void MotionPlanner::ExtendEST(void)
 {
+    /*
     Clock clk;
     StartTime(&clk);
     //your code 
@@ -141,6 +144,7 @@ void MotionPlanner::ExtendEST(void)
     double sto[2];
     m_simulator->SampleState(sto);
     
+
     //w(q) is a running estimate on importance of selecting q as the tree configuration
     //from which to add a new tree branch
     //w(q) = 1/(1+ number of neighbors near q)
@@ -148,6 +152,52 @@ void MotionPlanner::ExtendEST(void)
 
 
    
+    m_totalSolveTime += ElapsedTime(&clk);
+    */
+
+
+
+    //w(q) is a running estimate on importance of selecting q 
+    // as the tree configuration
+    //from which to add a new tree branch
+    //w(q) = 1/(1+ number of neighbors near q)
+    //w(q) = 1/1+deg(q)
+
+    Clock clk;
+    StartTime(&clk);
+    //your code
+
+    double sto[2];
+    if (PseudoRandomUniformReal(0,1) <= 0.1){
+        sto[0] = m_simulator->GetGoalCenterX();
+        sto[1] = m_simulator->GetGoalCenterY();
+    } 
+    else {
+        m_simulator->SampleState(sto);
+    }
+
+    double wTotal = 0;
+
+    std::vector<double> partial_weight;  
+    for(int i=0; i<m_vertices.size(); i++)
+    {
+        wTotal += 1.0/(1.0 + (m_vertices[i]->m_nchildren));  
+        //partial_weight.push_back(wTotal);
+    }
+/*
+    double wRand = PseudoRandomUniformReal(0,wTotal);
+    int vid = 0;
+    for(int i=0; i<partial_weight.size(); i++)
+    {
+        if(wRand <= partial_weight[i])
+        {
+            vid = i;
+            break;
+        }
+    }
+*/
+    ExtendTree(wTotal,sto);
+
     m_totalSolveTime += ElapsedTime(&clk);
 }
 
