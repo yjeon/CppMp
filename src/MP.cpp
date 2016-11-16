@@ -38,23 +38,30 @@ void MotionPlanner::ExtendTree(const int    vid,
     
     double vx = m_vertices[vid]->m_state[0];
     double vy = m_vertices[vid]->m_state[1];   
-    double step = m_simulator->GetDistOneStep();
-    double distance = sqrt(pow(vx - sto[0], 2) + pow(vy - sto[1], 2));
-    bool obs = false;
     
+    
+    bool obsFree = true;
+    
+
+    double distance = sqrt(pow(vx - sto[0], 2) + pow(vy - sto[1], 2));
     double dx = (sto[0]-vx)/distance;
     double dy = (sto[1]-vy)/distance;
     
     distance = sqrt(pow(dx,2)+pow(dy,2));
-    double nx = vx;
-    double ny = vy;
-    
-    if(distance<=step && !obs){
-        nx += dx*step;
-        ny += dy*step;
+    double nx;// = vx;
+    double ny;// = vy;
+    double step = m_simulator->GetDistOneStep();
+
+    while(distance <= step && obsFree){
+        nx = vx+(dx*step);
+        ny = vy+(dy*step);
+
         m_simulator->SetRobotCenter(nx,ny);
 
         if(m_simulator->IsValidState()){
+            vx = nx;
+            vy = ny;
+            
             Vertex *v = new Vertex();
             v->m_state[0] = nx;
             v->m_state[1] = ny;
@@ -63,14 +70,17 @@ void MotionPlanner::ExtendTree(const int    vid,
 
             if (m_simulator->HasRobotReachedGoal()){
                 m_vidAtGoal = vid;
-
+                break;
             }
+            //distance = sqrt(pow(nx - sto[0], 2) + pow(ny - sto[1], 2));
         }
         else {
             m_simulator->SetRobotCenter(vx, vy);
-            obs = true;
+            obsFree = false;
         }
+
     }
+
     
 }
 
@@ -80,16 +90,20 @@ void MotionPlanner::ExtendRandom(void)
     Clock clk;
     StartTime(&clk);
     //your code
-    
     double sto[2];
-    if (PseudoRandomUniformReal(0,1) <= 0.1) {
+    //double distance = sqrt(pow(m_simulator->GetRobotCenterX() - m_simulator->GetGoalCenterX(), 2) + pow(m_simulator->GetRobotCenterY() - m_simulator->GetGoalCenterY(), 2));
+    int prob = PseudoRandomUniformReal(0,10);
+    //std::cout << prob;
+    //std::cout << "\n";
+    if (prob == 1){
         sto[0] = m_simulator->GetGoalCenterX();
         sto[1] = m_simulator->GetGoalCenterY();
-    } 
+    }
     else{
         m_simulator->SampleState(sto);
     }
     int vid = (int)PseudoRandomUniformReal(0, m_vertices.size()-1);
+    
     ExtendTree(vid,sto);
      
 
@@ -100,10 +114,11 @@ void MotionPlanner::ExtendRRT(void)
 {
     Clock clk;
     StartTime(&clk);
-    
     double sto[2];
-    if (PseudoRandomUniformReal(0,1) <= 0.1) {
-
+    int prob = PseudoRandomUniformReal(0,10);
+    //std::cout << prob;
+    //std::cout << "\n";
+    if (prob == 1){
         sto[0] = m_simulator->GetGoalCenterX();
         sto[1] = m_simulator->GetGoalCenterY();
     } 
@@ -115,15 +130,15 @@ void MotionPlanner::ExtendRRT(void)
     double min_index;
     double x;
     double y;
-    double distance;
+    double dis;
     for(int i = 0; i< m_vertices.size();i++){
         x = m_vertices[i]->m_state[0];
         y = m_vertices[i]->m_state[1];
-        distance = sqrt(pow(x - sto[0], 2) + pow(y - sto[1], 2));
+        dis = sqrt(pow(x - sto[0], 2) + pow(y - sto[1], 2));
         //distance = sqrt(pow(x - m_simulator->GetGoalCenterX(), 2) + pow(y - m_simulator->GetGoalCenterY(), 2));
-        if(distance<min){
+        if(dis<min){
             min_index = i;
-            min = distance;
+            min = dis;
         }
     }
 
@@ -135,70 +150,64 @@ void MotionPlanner::ExtendRRT(void)
 
 void MotionPlanner::ExtendEST(void)
 {
-    /*
+
     Clock clk;
     StartTime(&clk);
-    //your code 
-    //press 3
-    //std::cout << "3"; 
-    double sto[2];
-    m_simulator->SampleState(sto);
+    //your code
+    //std::cout << "JOSE!!!\n";
+    // function should selet the random state sto as described
+    //in ExtendRandom
     
+    double sto[2];
+    int prob = PseudoRandomUniformReal(0,10);
+    //std::cout << prob;
+    //std::cout << "\n";
+    if (prob == 1){
+        sto[0] = m_simulator->GetGoalCenterX();
+        sto[1] = m_simulator->GetGoalCenterY();
+    } 
+    else{
+        m_simulator->SampleState(sto);
+    }
 
-    //w(q) is a running estimate on importance of selecting q as the tree configuration
-    //from which to add a new tree branch
-    //w(q) = 1/(1+ number of neighbors near q)
-    //w(q) = 1/1+deg(q)
-
-
-   
-    m_totalSolveTime += ElapsedTime(&clk);
-    */
-
-
+    //fucntion should select the vertex vid with probalbility
+    //proportional to a weight defined in terms of the number 
+    //of children coming out of vertex vid
 
     //w(q) is a running estimate on importance of selecting q 
     // as the tree configuration
     //from which to add a new tree branch
     //w(q) = 1/(1+ number of neighbors near q)
     //w(q) = 1/1+deg(q)
-
-    Clock clk;
-    StartTime(&clk);
-    //your code
-
-    double sto[2];
-    if (PseudoRandomUniformReal(0,1) <= 0.1){
-        sto[0] = m_simulator->GetGoalCenterX();
-        sto[1] = m_simulator->GetGoalCenterY();
-    } 
-    else {
-        m_simulator->SampleState(sto);
-    }
-
+    
     double wTotal = 0;
 
     std::vector<double> partial_weight;  
     for(int i=0; i<m_vertices.size(); i++)
     {
-        wTotal += 1.0/(1.0 + (m_vertices[i]->m_nchildren));  
-        //partial_weight.push_back(wTotal);
+        wTotal = 1.0/(1.0 + (m_vertices[i]->m_nchildren));  
+        partial_weight.push_back(wTotal);
     }
-/*
-    double wRand = PseudoRandomUniformReal(0,wTotal);
+
+    //double wRand = PseudoRandomUniformReal(0,partial_weight.size()-1);
+    double w = PseudoRandomUniformReal()*wTotal;
     int vid = 0;
     for(int i=0; i<partial_weight.size(); i++)
     {
-        if(wRand <= partial_weight[i])
+        
+
+        if(w <= partial_weight[i])
         {
             vid = i;
             break;
         }
     }
-*/
-    ExtendTree(wTotal,sto);
+    //int vid = partial_weight[wRand]/wTotal;
+
+    ExtendTree(vid,sto);
 
     m_totalSolveTime += ElapsedTime(&clk);
+    
 }
 
 
