@@ -20,5 +20,3 @@ do from 1 to number of vertices in graph
 	Save q_near the vertex with the smallest distance to goal.
   
 extendTree(q_near)
-
-#with Scene 5
