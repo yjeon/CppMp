@@ -27,12 +27,12 @@ MotionPlanner::~MotionPlanner(void)
 
     const int n = m_vertices.size();
     for(int i = 0; i < n; ++i)
-	delete m_vertices[i];
+    delete m_vertices[i];
 }
 
 
 void MotionPlanner::ExtendTree(const int    vid, 
-			       const double sto[])
+                   const double sto[])
 {
 //your code
     
@@ -48,8 +48,8 @@ void MotionPlanner::ExtendTree(const int    vid,
     double dy = (sto[1]-vy)/distance;
     
     distance = sqrt(pow(dx,2)+pow(dy,2));
-    double nx;// = vx;
-    double ny;// = vy;
+    double nx;
+    double ny;
     double step = m_simulator->GetDistOneStep();
 
     while(distance <= step && obsFree){
@@ -154,10 +154,9 @@ void MotionPlanner::ExtendEST(void)
     Clock clk;
     StartTime(&clk);
     //your code
-    //std::cout << "JOSE!!!\n";
     // function should selet the random state sto as described
     //in ExtendRandom
-    /*
+    
     double sto[2];
     int prob = PseudoRandomUniformReal(0,10);
     //std::cout << prob;
@@ -191,49 +190,151 @@ void MotionPlanner::ExtendEST(void)
         partial_weight.push_back(wTotal);
     }
 
-    //double wRand = PseudoRandomUniformReal(0,partial_weight.size()-1);
     double w = PseudoRandomUniformReal()*wTotal;
-    int vid = 0;
+    int vid;
     for(int i=0; i<partial_weight.size(); i++)
     {
         
-
         if(w <= partial_weight[i])
         {
             vid = i;
             break;
         }
     }
-    //int vid = partial_weight[wRand]/wTotal;
-
+    
     ExtendTree(vid,sto);
 
     m_totalSolveTime += ElapsedTime(&clk);
-    */
+    
 }
 
-
+//4
 void MotionPlanner::ExtendMyApproach(void)
 {
     Clock clk;
     StartTime(&clk);
     //your code
-    //press 4
-    std::cout << "4"; 
+     // generate a ra
+    int prob = PseudoRandomUniformReal(0, 2);
+    double sto[2];
+    double sto2[2];
+
+
+    if (prob == 1)
+    {
+        sto2[0] = m_simulator->GetRobotCenterX();
+        sto2[1] = m_simulator->GetRobotCenterY();
+        sto[0] = m_simulator->GetGoalCenterX();
+        sto[1] = m_simulator->GetGoalCenterY();
+        
+    }
+    else
+    {
+        m_simulator->SampleState(sto);
+        m_simulator->SampleState(sto2);
+    }
     
+    int vid = 0;
+    double x, y, dis,min_index, real_dist;
+    double min = 10000;
+
+
+    double goalX = m_simulator->GetGoalCenterX();
+    double goalY = m_simulator->GetGoalCenterY();
+    double robotX = m_simulator->GetRobotCenterX();
+    double robotY = m_simulator->GetRobotCenterY();
+
+
+
+
+    for (int i = 0; i< m_vertices.size(); i++) 
+    {
+
+
+        x = m_vertices[i]->m_state[0];
+        y = m_vertices[i]->m_state[1];
+        dis = sqrt(pow(x - sto[0], 2) + pow(y - sto[1], 2));
+        real_dist = 1.0/pow( (1.0 + sqrt(pow((goalX-robotX),2) + pow((goalY-robotY),2))),2);
+
+
+        if (dis>real_dist) 
+        {
+            min_index = i;
+            min = real_dist;
+        }
+    }
+    
+    ExtendTree(min_index, sto);
+
+
+
 
     
     m_totalSolveTime += ElapsedTime(&clk);
 }
 
 
+
+/*
+void MotionPlanner::ExtendMyApproach(void)
+{
+    
+    Clock clk;
+    StartTime(&clk);
+    
+    int prob = PseudoRandomUniformReal(0, 10);
+    double sto[2];
+    if (prob == 1){
+        m_simulator->SampleState(sto);
+        
+    }
+    else{
+        sto[0] = m_simulator->GetRobotCenterX();
+        sto[1] = m_simulator->GetRobotCenterY();
+    }
+
+    int robotPosX = m_simulator->GetRobotCenterX();
+    int robotPosY = m_simulator->GetRobotCenterY();
+    int goalPosX = m_simulator->GetGoalCenterX();
+    int goalPosY = m_simulator->GetGoalCenterY();
+    double dist = sqrt(pow( robotPosX- goalPosX, 2) + pow(robotPosY - goalPosY, 2));
+    if((m_vertices.size() < 3000)){//|| (m_totalSolveTime<20)){
+        int vid = (int)PseudoRandomUniformReal(0, m_vertices.size()-1);
+        ExtendTree(vid,sto);
+    }
+    else if(dist<10){
+        int vid = (int)PseudoRandomUniformReal(0, m_vertices.size()-1);
+        ExtendTree(vid,sto);
+
+    }
+    else{
+        double x, y, dis,min_index;
+        double min = 10000;
+        for (int i = 0; i< m_vertices.size(); i++) 
+        {
+            x = m_vertices[i]->m_state[0];
+            y = m_vertices[i]->m_state[1];
+            dis = sqrt(pow(x - sto[0], 2) + pow(y - sto[1], 2));
+            if (dis<min) {
+                min_index = i;
+                min = dis;
+            }
+        }
+        
+        ExtendTree(min_index, sto);
+    }
+
+    m_totalSolveTime += ElapsedTime(&clk);
+}
+*/
+
 void MotionPlanner::AddVertex(Vertex * const v)
 {
     if(v->m_type == Vertex::TYPE_GOAL)
-	m_vidAtGoal = m_vertices.size();
+    m_vidAtGoal = m_vertices.size();
     m_vertices.push_back(v); 
     if(v->m_parent >= 0)
-	(++m_vertices[v->m_parent]->m_nchildren);
+    (++m_vertices[v->m_parent]->m_nchildren);
 }
 
 void MotionPlanner::GetPathFromInitToGoal(std::vector<int> *path) const
@@ -245,12 +346,12 @@ void MotionPlanner::GetPathFromInitToGoal(std::vector<int> *path) const
     int i = m_vidAtGoal;
     do
     {
-	rpath.push_back(i);
-	i = m_vertices[i]->m_parent;	
+    rpath.push_back(i);
+    i = m_vertices[i]->m_parent;    
     } 
     while(i >= 0);
     
     path->clear();
     for(int i = rpath.size() - 1; i >= 0; --i)
-	path->push_back(rpath[i]);
+    path->push_back(rpath[i]);
 }

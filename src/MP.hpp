@@ -47,12 +47,27 @@ protected:
 
     void AddVertex(Vertex * const v);
 
+    //void AddVertexStart(Vertex * const v, std::vector<Vertex *> v_m);
+    
+    //void AddVertexGoal(Vertex * const v, std::vector<Vertex *> v_m);
+    
     void ExtendTree(const int    vid,
 		    const double sto[]);
+
+    //void ExtendTreeFromGoal(const int    vid, const double sto[]);
     
     Simulator            *m_simulator;
     std::vector<Vertex *> m_vertices;
+
+    //Simulator            *m_simulatorGoal;
+    //std::vector<Vertex *> m_verticesGoal;
+
     int                   m_vidAtGoal;
+    
+    //int                   m_vidAtGoalStart;
+
+    //int                   m_vidAtGoalGoal;
+
     double                m_totalSolveTime;
 
     
